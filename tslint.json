@@ -1,0 +1,42 @@
+{
+  "extends": "tslint:recommended",
+  "rules": {
+    "trailing-comma": [ false ],
+    "no-console": [true, "log", "error"],
+    "quotemark": [
+      true,
+      "single",
+      "jsx-double",
+      "avoid-escape"
+    ],
+    "arrow-parens": false,
+    "only-arrow-functions": [ false ],
+    "member-ordering": [
+      true,
+      {
+        "order": [
+          "public-static-field",
+          "protected-static-field",
+          "private-static-field",
+          "public-static-method",
+          "protected-static-method",
+          "private-static-method",
+          "public-instance-field",
+          "protected-instance-field",
+          "private-instance-field",
+          "public-instance-method",
+          "protected-instance-method",
+          "private-instance-method",
+          "constructor"
+        ]
+      }
+    ],
+    "variable-name": [
+      true,
+      "ban-keywords",
+      "check-format",
+      "allow-leading-underscore",
+      "allow-pascal-case"
+    ]
+  }
+}

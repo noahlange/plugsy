@@ -1,4 +1,5 @@
 import Plugsy from './Plugsy';
+
 import merge from '../utils/merge';
 import shim from '../utils/shimmer';
 import parse from '../utils/tagger';
@@ -6,7 +7,7 @@ import parse from '../utils/tagger';
 export default class PlugsyManager {
   // hash of name => plugin instance
   public plugins: {
-    [key: string]: Plugsy<any>
+    [key: string]: Plugsy<any>;
   } = {};
 
   // hash of id => notetags => props
@@ -18,13 +19,15 @@ export default class PlugsyManager {
   // returns the plugin's own properties for serialization.
   // this is not a great solution but it'll work for now.
   public save(): object {
-    let out = {};
+    const out = {};
     for (const name in this.plugins) {
-      const plugin = this.plugins[name];
-      out[name] = {};
-      Object.getOwnPropertyNames(plugin)
-        .filter(prop => typeof plugin[prop] !== 'function')
-        .forEach(prop => (out[name][prop] = plugin[prop]));
+      if (this.plugins[name]) {
+        const plugin = this.plugins[name];
+        out[name] = {};
+        Object.getOwnPropertyNames(plugin)
+          .filter(prop => typeof plugin[prop] !== 'function')
+          .forEach(prop => (out[name][prop] = plugin[prop]));
+      }
     }
     return out;
   }
@@ -32,7 +35,9 @@ export default class PlugsyManager {
   // load data from the save file into the data store.
   public load(contents: object): void {
     for (const name in contents) {
-      this.store[name] = contents[name];
+      if (contents[name]) {
+        this.store[name] = contents[name];
+      }
     }
   }
 
@@ -43,7 +48,7 @@ export default class PlugsyManager {
 
   // retrieve a plugin by name or constructor
   public get<T extends Plugsy<any>>(name: string | typeof Plugsy): T {
-    let normalized = typeof name === 'function' ? name.name : name;
+    const normalized = typeof name === 'function' ? name.name : name;
     return this.plugins[normalized] as T;
   }
 
@@ -55,7 +60,7 @@ export default class PlugsyManager {
     plugin.parameters = PluginManager.parameters(name);
     this.plugins[name] = plugin;
     shim(Game_Interpreter.prototype, {
-      pluginCommand(fn: Function, command: string, args: string[]) {
+      pluginCommand(fn: (...args: any[]) => any, command: string, args: string[]) {
         fn(command, args);
         const subcommand = args[0];
         if (command.toLowerCase() === name.toLowerCase()) {
@@ -72,10 +77,15 @@ export default class PlugsyManager {
   // overwrite save and load functionality.
   public constructor() {
     shim(DataManager, {
+      // on game load...
+      extractSaveContents: (extractSave, contents) => {
+        extractSave(contents);
+        this.load(contents.plugsy);
+      },
       // load notetags
       isDatabaseLoaded: isLoaded => {
         isLoaded();
-        let all = {};
+        const all = {};
         Object.keys(window || {})
           // eek
           .filter(f => f[0] === '$')
@@ -91,11 +101,6 @@ export default class PlugsyManager {
             all[f] = notetags;
           });
         this.notetags = all;
-      },
-      // on game load...
-      extractSaveContents: (extractSave, contents) => {
-        extractSave(contents);
-        this.load(contents.plugsy);
       },
       makeSaveContents: makeSave => {
         const contents = makeSave();

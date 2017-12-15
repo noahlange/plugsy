@@ -5,10 +5,14 @@ function brand(object) {
 }
 
 // overloading is stupid
-function command(target: Plugsy | Function, key?: string, descriptor?: PropertyDescriptor): any {  
+function command(
+  target: Plugsy<any> | ((...args: any[]) => any),
+  key?: string,
+  descriptor?: PropertyDescriptor
+): any {
   // Property branding - we'd use Symbols if they were consistently available.
   // But they're not, so we won't.
-  let fn = typeof target === 'function';
+  const fn = typeof target === 'function';
   fn ? brand(target) : brand(target[key]);
   return fn ? target : descriptor;
 }
