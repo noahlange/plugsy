@@ -1,6 +1,6 @@
-abstract class Plugsy {
+abstract class Plugsy<T> {
   public commands: object;
-  public parameters: any;
+  public parameters: T;
 }
 
 export default Plugsy;

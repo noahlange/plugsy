@@ -5,7 +5,9 @@ import parse from '../utils/tagger';
 
 export default class PlugsyManager {
   // hash of name => plugin instance
-  public plugins = {};
+  public plugins: {
+    [key: string]: Plugsy<any>
+  } = {};
 
   // hash of id => notetags => props
   public notetags = {};
@@ -35,19 +37,19 @@ export default class PlugsyManager {
   }
 
   // hydrate a plugin with its prior contents
-  public hydrate(plugin: Plugsy): void {
+  public hydrate(plugin: Plugsy<any>): void {
     merge(plugin, this.store[plugin.constructor.name]);
   }
 
   // retrieve a plugin by name or constructor
-  public get<T extends Plugsy>(name: string | typeof Plugsy): T {
+  public get<T extends Plugsy<any>>(name: string | typeof Plugsy): T {
     let normalized = typeof name === 'function' ? name.name : name;
     return this.plugins[normalized] as T;
   }
 
   // install a plugin by constructor and register commands.
   /// can be chained -- $plugsy.install(new Foo).install(new Bar);
-  public install<T extends Plugsy>(plugin: T): this {
+  public install<T extends Plugsy<any>>(plugin: T): this {
     const name = plugin.constructor.name;
     this.hydrate(plugin);
     plugin.parameters = PluginManager.parameters(name);
