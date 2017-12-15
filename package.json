@@ -1,0 +1,20 @@
+{
+  "name": "plugsy",
+  "author": "Noah Lange <noahrlange@gmail.com>",
+  "license": "MIT",
+  "readme": "README.md",
+  "version": "0.1.0",
+  "main": "./plugsy.js",
+  "types": "./types/plugsy.d.ts",
+  "devDependencies": {
+    "ava": "^0.24.0",
+    "rollup": "^0.52.1",
+    "rollup-plugin-babel-minify": "^3.1.2",
+    "rollup-plugin-typescript2": "^0.8.4"
+  },
+  "scripts": {
+    "test": "tsc --module 'commonjs'; ava -v ./dist/tests/**/*.js",
+    "watch": "rollup --watch -c rollup.config.js",
+    "build": "rollup -c rollup.config.js"
+  }
+}

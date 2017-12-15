@@ -1,0 +1,5 @@
+.rpt2_cache
+dist
+docs
+node_modules
+plugsy.js

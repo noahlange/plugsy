@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "rootDir": "src",
+    "outDir": "dist",
+    "experimentalDecorators": true
+  },
+  "include": ["./src/**/*.ts", "./types/rmmv/d.ts"]
+}
