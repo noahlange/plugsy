@@ -4,6 +4,10 @@ import merge from '../utils/merge';
 import shim from '../utils/shimmer';
 import parse from '../utils/tagger';
 
+declare var DataManager;
+declare var Game_Interpreter;
+declare var PluginManager;
+
 export default class PlugsyManager {
   // hash of name => plugin instance
   public plugins: {
@@ -12,6 +16,9 @@ export default class PlugsyManager {
 
   // hash of id => notetags => props
   public notetags = {};
+
+  // additional data files to load.
+  public data = [];
 
   // hash of name => serialized contents
   public store = {};
@@ -55,10 +62,11 @@ export default class PlugsyManager {
   // install a plugin by constructor and register commands.
   /// can be chained -- $plugsy.install(new Foo).install(new Bar);
   public install<T extends Plugsy<any>>(plugin: T): this {
-    const name = plugin.constructor.name;
+    const { name, data = [] } = plugin.constructor as any;
     this.hydrate(plugin);
     plugin.parameters = PluginManager.parameters(name);
     this.plugins[name] = plugin;
+    this.data.push(...data);
     shim(Game_Interpreter.prototype, {
       pluginCommand(fn: (...args: any[]) => any, command: string, args: string[]) {
         fn(command, args);
@@ -84,7 +92,7 @@ export default class PlugsyManager {
       },
       // load notetags
       isDatabaseLoaded: isLoaded => {
-        isLoaded();
+        const okay = isLoaded();
         const all = {};
         Object.keys(window || {})
           // eek
@@ -101,6 +109,11 @@ export default class PlugsyManager {
             all[f] = notetags;
           });
         this.notetags = all;
+        return okay;
+      },
+      loadDatabase: load => {
+        DataManager._databaseFiles.push(...this.data);
+        load();
       },
       makeSaveContents: makeSave => {
         const contents = makeSave();

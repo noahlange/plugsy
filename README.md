@@ -18,7 +18,9 @@ notetags, method shimming, plugin commands, serialization and data loading.
 import Plugsy, { command } from 'plugsy';
 
 class MyPlugin extends Plugsy {
-  
+
+  public static data = [ 'MyPlugin' ];
+
   // properties are automatically saved to and loaded from save files
   public myVariable = 42;
   public myOtherVariable = 'YOU ARE TEARING ME APART LISA';
@@ -26,7 +28,7 @@ class MyPlugin extends Plugsy {
   // command can be used to decorate methods as valid plugin commands.
   @command
   public hello(hello: string) {
-    console.info(hello);
+    return $dataMyPlugin[hello];
   }
 
   // command can also be used as a function in environments without decorators
