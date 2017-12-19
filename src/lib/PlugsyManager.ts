@@ -102,7 +102,7 @@ export default class PlugsyManager {
             const notetags = {};
             const items = window[f];
             for (const item of items) {
-              if (item.note) {
+              if (item && item.note) {
                 Object.assign(notetags, { [item.id]: parse(item.note) });
               }
             }

@@ -16,9 +16,12 @@
   },
   "scripts": {
     "lint": "tslint src/**/*.ts",
-    "build": "tsc --module 'commonjs'",
-    "test": "ava -v ./dist/tests/**/*.js",
+    "build": "tsc --module \"commonjs\"",
+    "test": "yarn run build; ava -v ./dist/tests/**/*.js",
     "watch": "rollup --watch -c rollup.config.js",
-    "bundle": "rollup -c rollup.config.js"
+    "bundle": "tsc; rollup -c rollup.config.js"
+  },
+  "dependencies": {
+    "rollup-plugin-sourcemaps": "^0.4.2"
   }
 }

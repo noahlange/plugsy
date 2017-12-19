@@ -1,15 +1,16 @@
-import typescript from 'rollup-plugin-typescript2';
 import minify from 'rollup-plugin-babel-minify';
+import sourcemaps from 'rollup-plugin-sourcemaps';
 
 export default {
-  input: './src/main.ts',
+  input: './dist/main.js',
   output: {
     file: './plugsy.js',
     name: 'plugsy',
     format: 'umd'
   },
+  sourceMap: 'inline',
   plugins: [
-    typescript({ clean: true, check: false }),
+    sourcemaps(),
     minify({ comments: false })
   ]
 };

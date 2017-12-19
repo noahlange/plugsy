@@ -2,15 +2,21 @@ import test from 'ava';
 import shimmer from '../utils/shimmer';
 
 test('shimmer should shim a method and pass the current method as a bound first arg', t => {
-  class MyClass {
+
+  class Foo {
+    public cats = 'bar';
     public foo() {
-      return 'bar';
+      return this.cats;
     }
+  }
+
+  class MyClass extends Foo {
   }
 
   shimmer(MyClass.prototype, {
     foo(orig) {
-      return `foo${orig()}`;
+      const bar = orig.call(this);
+      return `foo${bar}`;
     }
   });
 
