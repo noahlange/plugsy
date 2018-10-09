@@ -8,41 +8,38 @@
     |_|            |___/     |___/ 
 
 # plugsy
-Plugsy is a zero-dependency plugin framework and utility belt for RPGMaker MV.
+Plugsy is a single-dependency plugin framework and utility belt for RPGMaker MV.
 It automates and simplifies many common patterns in MV plugin development —
 notetags, method shimming, plugin commands, serialization and data loading.
 
 ## Overview
 
 ```typescript
-import Plugsy, { command } from 'plugsy';
+import Plugsy, { command, persist } from 'plugsy';
 
 class MyPlugin extends Plugsy {
 
-  public static data = [ 'MyPlugin' ];
-
-  // properties are automatically saved to and loaded from save files
+  // serializable `persist`ed properties are automatically saved to and loaded from save files
+  @persist
   public myVariable = 42;
-  public myOtherVariable = 'YOU ARE TEARING ME APART LISA';
-  
+
   // command can be used to decorate methods as valid plugin commands.
   @command
   public hello(hello: string) {
     return $dataMyPlugin[hello];
   }
 
-  // command can also be used as a function in environments without decorators
+  // commands and persisted variables can also be used in environments without decorators
+  public myOtherVariable = persist('YOU ARE TEARING ME APART LISA');
   public goodbye = command((goodbye: string) => {
     console.info(goodbye);
   });
 }
 
-const plugin = new MyPlugin();
-$plugsy.install(plugin);
-$plugsy.get(MyPlugin) === plugin; // true
+$plugsy.install(new MyPlugin());
 ```
 
-On save and load, any changes to (serializable) local variables will be
+On save and load, any changes to persisted variables will be
 serialized and deserialized to and from save files and hydrated automagically
 on load.
 
@@ -64,8 +61,8 @@ class MyObject {
 }
 
 shimmer(myObject.prototype, {
-  myMethod(original, ...args) {
-    let res = original(...args); // invokes original method
+  myMethod(myObjectInstance: MyObject, myMethod: Function, ...args: any[]) {
+    let res = myMethod(...args); // invoke original method
     // do stuff!
   }
 });
@@ -82,10 +79,10 @@ const actorOneNotetags = $plugsy.notetags.$dataActors[1];
 ```
 
 Tags should follow standard HTML syntax. Attributes without a property default
-to `true`. Currently, kebab-cased attributes will not be transformed to
+to `true`. Kebab-cased attributes are transformed to
 camelCase.
 
-```html
+```xml
 <MyTag />
 <MyTag foo />
 <MyTag foo="bar" />
@@ -105,7 +102,7 @@ generally) with the `tagger` export.
 ```typescript
 import { tagger } from 'plugsy';
 
-const tags = notetags(`
+const tags = await tagger(`
   <MyTag has="props" foo />
   <MyOtherTag>has contents</MyOtherTag>
 `);
@@ -133,6 +130,7 @@ import { loader } from 'plugsy';
 
 (async function main() {
   const actors = await loader('Actors');
+  const dlg = await loader('Dialogue');
 })();
 ```
 

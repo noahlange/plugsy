@@ -1,27 +1,32 @@
 {
   "name": "plugsy",
+  "version": "0.3.0",
   "author": "Noah Lange <noahrlange@gmail.com>",
   "license": "MIT",
   "readme": "README.md",
-  "version": "0.1.0",
   "main": "./plugsy.js",
-  "types": "./types/plugsy.d.ts",
+  "types": "./types/index.d.ts",
+  "dependencies": {
+    "tsxml": "^0.1.0"
+  },
   "devDependencies": {
-    "ava": "^0.24.0",
-    "rollup": "^0.52.1",
-    "rollup-plugin-babel-minify": "^3.1.2",
-    "rollup-plugin-typescript2": "^0.8.4",
-    "tslint": "^5.8.0",
-    "typescript": "^2.6.2"
+    "ava": "^0.25.0",
+    "prettier": "^1.13.7",
+    "ts-loader": "^4.4.2",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.13.0",
+    "typescript": "^3.1.1",
+    "webpack": "^4.15.1",
+    "webpack-cli": "^3.0.8"
   },
   "scripts": {
     "lint": "tslint src/**/*.ts",
-    "build": "tsc --module \"commonjs\"",
-    "test": "yarn run build; ava -v ./dist/tests/**/*.js",
-    "watch": "rollup --watch -c rollup.config.js",
-    "bundle": "tsc; rollup -c rollup.config.js"
+    "test": "tsc --module \"commonjs\"; ava -v ./dist/tests/**/*.js",
+    "pretty": "prettier --write src/**/*.ts",
+    "watch": "webpack --watch",
+    "build": "webpack --mode production"
   },
-  "dependencies": {
-    "rollup-plugin-sourcemaps": "^0.4.2"
+  "prettier": {
+    "singleQuote": true
   }
 }

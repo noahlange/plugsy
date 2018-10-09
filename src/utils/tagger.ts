@@ -1,42 +1,54 @@
-function getTagProps(props: string) {
-  const out = {};
-  for (const prop of props.trim().split(' ')) {
-    const [key, value = true] = prop.split('=');
-    out[key] = value === true ? value : value.replace(/"/g, '');
-  }
-  return out;
+import { Parser } from 'tsxml';
+// https://stackoverflow.com/a/15829686
+function camelcase(str: string) {
+  return str.replace(
+    /^([A-Z])|[\s-_]+(\w)/g,
+    (match, p1, p2) => (p2 ? p2.toUpperCase() : p1.toLowerCase())
+  );
 }
 
-function parseTags(str: string, regex: RegExp) {
-  const arr = [];
-  const out = {};
-  let next = regex.exec(str);
-  while (next) {
-    if (next) {
-      arr.push(next);
-    }
-    next = regex.exec(str);
-  }
-  for (const match of arr) {
-    const [input, tag, props, content] = match;
-    out[tag] = (props && getTagProps(props)) || {};
-    if (content) {
-      out[tag].contents = content.replace(/"/g, '');
-    }
-  }
-  return out;
-}
-
-export default function tagger(note: string): object {
-  if (typeof note !== 'string') {
+function parseAst(node: any, out: any = {}) {
+  if (!node) {
     return;
   }
-  const out = {};
-  const full = /<([a-zA-Z0-9]+)\ ?([a-zA-Z].+[=".+"]?[\s?]*)?>([a-zA-Z\s]+)?<\/([a-zA-Z0-9]+)>/g;
-  const half = /<([a-zA-Z0-9]+)\ ?([a-zA-Z].+[=".+"]?)?\s?\/>/g;
-  const oldFull = /<([a-zA-Z0-9]+)\ ?([a-zA-Z].+[=".+"][\s?]*)?>([a-zA-Z\s]+)?<\/([a-zA-Z0-9]+)>/g;
-  const oldHalf = /<([a-zA-Z0-9]+)\ ?([a-zA-Z].+[=".+"])?\s?\/>/g;
-  Object.assign(out, parseTags(note, full));
-  Object.assign(out, parseTags(note, half));
+
+  if (node.content) {
+    return { contents: node.content };
+  }
+
+  if (node.attrList) {
+    for (const attr in node.attrList) {
+      if (attr in node.attrList) {
+        const cased = camelcase(attr);
+        const v = node.attrList[attr];
+        // coerce strings to numbers
+        // @ts-ignore
+        // tslint:disable-next-line
+        out[cased] = isNaN(+v) || +v != v ? (v === undefined ? true : v) : +v;
+      }
+    }
+  }
+
+  if (node.childNodes) {
+    const children = node.childNodes.map(n => parseAst(n));
+    out = children.reduce((a, b) => ({ ...a, ...b }), out);
+  }
+
+  if (node.tagName) {
+    return {
+      [node.tagName]: out
+    };
+  }
+
+  return out;
+}
+
+export default async function tagger(note: string): Promise<object | null> {
+  if (typeof note !== 'string') {
+    return null;
+  }
+  const ast = await Parser.parseStringToAst(note);
+  let out = ast.childNodes.map(child => parseAst(child));
+  out = out.reduce((a, b) => ({ ...a, ...b }), {});
   return out;
 }

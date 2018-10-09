@@ -1,20 +1,25 @@
-import Plugsy from '../lib/Plugsy';
+import Plugsy from '..';
+import { isCommand } from '../utils/constants';
 
 function brand(object) {
-  Object.defineProperty(object, '$$command$$', { value: true });
+  Object.defineProperty(object, isCommand, { value: true });
 }
 
-// overloading is stupid
+type Handler = (...args: any[]) => any;
+
+function command(target: Handler): Handler;
+function command(target: Plugsy, key: string): PropertyDescriptor;
 function command(
-  target: Plugsy<any> | ((...args: any[]) => any),
-  key?: string,
-  descriptor?: PropertyDescriptor
-): any {
-  // Property branding - we'd use Symbols if they were consistently available.
-  // But they're not, so we won't.
-  const fn = typeof target === 'function';
-  fn ? brand(target) : brand(target[key]);
-  return fn ? target : descriptor;
+  target: Plugsy | Handler,
+  key?: string
+): PropertyDescriptor | Handler {
+  if (typeof target === 'function') {
+    brand(target);
+    return target;
+  } else {
+    brand(target[key]);
+    return;
+  }
 }
 
 export default command;

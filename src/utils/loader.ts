@@ -6,7 +6,7 @@ export default function load(name) {
     const url = 'data/' + name;
     xhr.open('GET', url);
     xhr.overrideMimeType('application/json');
-    xhr.onload = function() {
+    xhr.onload = () => {
       if (xhr.status < 400) {
         resolve(JSON.parse(xhr.responseText));
       } else {

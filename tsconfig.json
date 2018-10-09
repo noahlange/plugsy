@@ -1,14 +1,18 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2015",
     "module": "es2015",
     "rootDir": "src",
     "outDir": "dist",
-    "sourceMap": true,
-    "experimentalDecorators": true
+    "inlineSourceMap": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationDir": "types"
   },
   "include": [
-    "./src/**/*.ts",
-    "./types/rmmv/d.ts"
+    "./src/**/*.ts"
   ]
 }
