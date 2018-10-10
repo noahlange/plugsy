@@ -72,7 +72,8 @@ export default class PlugsyManager {
         for (const plugin of this.toInstall) {
           this._install(plugin);
         }
-
+        // callback being invoked repeatedly, plugins were being installed multiple times.
+        this.toInstall = [];
         return okay;
       },
       loadDatabase: (dm, load) => {

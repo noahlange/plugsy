@@ -15,7 +15,7 @@ abstract class Plugsy {
     for (const key in this) {
       if (key in this) {
         const value = this[key];
-        if (value[toPersist]) {
+        if (value && value[toPersist]) {
           if (keys.indexOf(key) === -1) {
             keys.push(key);
           }
