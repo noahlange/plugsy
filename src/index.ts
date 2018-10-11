@@ -27,4 +27,4 @@ if (hasWindow) {
 }
 
 export default Plugsy;
-export { command, persist, loader, tagger, shimmer };
+export { PlugsyManager, command, persist, loader, tagger, shimmer };

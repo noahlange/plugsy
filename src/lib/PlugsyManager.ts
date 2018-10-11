@@ -15,7 +15,7 @@ export default class PlugsyManager {
   public toInstall: Plugsy[] = [];
 
   // hash of id => notetags => props
-  public notetags: Record<string, Array<Record<string, string>>> = {};
+  public notetags: Record<string, Array<Record<string, any>>> = {};
 
   // additional data files to load.
   public data = [];

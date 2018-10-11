@@ -1,4 +1,5 @@
 import { Parser } from 'tsxml';
+
 // https://stackoverflow.com/a/15829686
 function camelcase(str: string) {
   return str.replace(
@@ -13,7 +14,7 @@ function parseAst(node: any, out: any = {}) {
   }
 
   if (node.content) {
-    return { contents: node.content };
+    return node.content;
   }
 
   if (node.attrList) {
@@ -21,17 +22,20 @@ function parseAst(node: any, out: any = {}) {
       if (attr in node.attrList) {
         const cased = camelcase(attr);
         const v = node.attrList[attr];
-        // coerce strings to numbers
-        // @ts-ignore
-        // tslint:disable-next-line
-        out[cased] = isNaN(+v) || +v != v ? (v === undefined ? true : v) : +v;
+        out[cased] = v === undefined ? true : v;
       }
     }
   }
 
   if (node.childNodes) {
     const children = node.childNodes.map(n => parseAst(n));
-    out = children.reduce((a, b) => ({ ...a, ...b }), out);
+    if (children.length > 1) {
+      out.children = children;
+    }
+    if (children.length === 1 && typeof children[0] === 'string') {
+      out.contents = children[0];
+    }
+    // out = children.reduce((a, b) => ({ ...a, ...b }), out);
   }
 
   if (node.tagName) {

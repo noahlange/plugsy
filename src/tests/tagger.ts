@@ -78,6 +78,32 @@ test('should parse kebab-cased attributes into camel-cased ones', async t => {
   });
 });
 
+test('should parse orphaned contents into contents field', async t => {
+  const str = `<NoteTag>what</NoteTag>`;
+  t.deepEqual(await p(str), {
+    NoteTag: {
+      contents: 'what'
+    }
+  });
+});
+
+test('should parse nested tags', async t => {
+  const str = `<palette bar="asdf"><color hex="#000000" />what</palette>`;
+  t.deepEqual(await p(str), {
+    palette: {
+      bar: 'asdf',
+      children: [
+        {
+          color: {
+            hex: '#000000'
+          }
+        },
+        'what'
+      ]
+    }
+  });
+});
+
 test("shouldn't explode when it can't find note tags", async t => {
   t.notThrows(() => p(''));
   t.notThrows(() => p(undefined));
