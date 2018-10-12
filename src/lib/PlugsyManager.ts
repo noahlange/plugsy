@@ -10,6 +10,8 @@ const hasCorescript: boolean = hasWindow && (window as any).corescript;
 const corescript = hasCorescript ? (window as any).corescript : null;
 
 export default class PlugsyManager {
+  public commands: string[] = [];
+
   // hash of name => plugin instance
   public plugins: Record<string, Plugsy> = {};
   public toInstall: Plugsy[] = [];
@@ -138,6 +140,15 @@ export default class PlugsyManager {
     this.hydrate(plugin);
     plugin.parameters = PluginManager.parameters(name);
     this.plugins[name] = plugin;
+
+    for (const key of Object.getOwnPropertyNames(
+      Object.getPrototypeOf(plugin)
+    )) {
+      if (plugin[key][isCommand]) {
+        this.commands.push(`${name.toLowerCase()} ${key.toLowerCase()}`);
+      }
+    }
+
     shim(Interpreter.prototype, {
       pluginCommand(
         interpreter,

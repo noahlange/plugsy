@@ -109,3 +109,16 @@ test("shouldn't explode when it can't find note tags", async t => {
   t.notThrows(() => p(undefined));
   t.notThrows(() => p(null));
 });
+
+test("shouldn't explode when given mix of Yanfly tags and XML tags", async t => {
+  const str = `
+    <Initial Level: x>
+    <stat: +x>  
+    <Bar foo="bat" />
+    <bag ban>oh hi mark</bag>
+  `;
+  t.deepEqual(await p(str), {
+    Bar: { foo: 'bat' },
+    bag: { ban: true, contents: 'oh hi mark' },
+  });
+});

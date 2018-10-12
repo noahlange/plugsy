@@ -9,9 +9,7 @@ test('should properly shim function', t => {
   };
 
   const baz = shim(foo, {
-    bar(obj, fn, one, two) {
-      return fn(one, two) + two + one;
-    }
+    bar: (_, fn, one, two) => fn(one, two) + two + one,
   });
 
   t.is(baz.bar(1, 2), 6);

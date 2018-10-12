@@ -10,7 +10,9 @@ export default function shimmer<T, K extends keyof T>(
   return obj;
 }
 
-type BoundMethodRecord<T, K extends keyof T> = Record<K, Bound<T, T[K]>>;
+type BoundMethodRecord<T, K extends keyof T> =
+  & Record<K, Bound<T, T[K]>>
+  & Record<string, Bound<T, any>>;
 
 type Fn<T> = T extends (...args: infer U) => infer R
   ? (...args: U) => R

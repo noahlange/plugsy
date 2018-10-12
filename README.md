@@ -1,24 +1,21 @@
-           _                       
-          | |                      
-     _ __ | |_   _  __ _ ___ _   _ 
+           _
+          | |
+     _ __ | |_   _  __ _ ___ _   _
     | '_ \| | | | |/ _` / __| | | |
     | |_) | | |_| | (_| \__ \ |_| |
     | .__/|_|\__,_|\__, |___/\__, |
     | |             __/ |     __/ |
-    |_|            |___/     |___/ 
+    |_|            |___/     |___/
 
 # plugsy
-Plugsy is a single-dependency plugin framework and utility belt for RPGMaker MV.
-It automates and simplifies many common patterns in MV plugin development —
+Plugsy is a single-dependency (gotta parse that XML somehow) plugin framework and utility belt for RPGMaker MV. It automates and simplifies many common patterns in MV plugin development —
 notetags, method shimming, plugin commands, serialization and data loading.
 
 ## Overview
-
 ```typescript
 import Plugsy, { command, persist } from 'plugsy';
 
 class MyPlugin extends Plugsy {
-
   // serializable `persist`ed properties are automatically saved to and loaded from save files
   @persist
   public myVariable = 42;
@@ -48,8 +45,8 @@ decorator.
 
 ### Shimmer
 Shimmer is a simple utility function. It allows you to easily augment existing
-functionality by providing an object of methods and properties that will be
-merged onto the functions of the first argument.
+functionality by providing an object of methods that will be
+merged onto the first argument. This allows you to safely "overwrite" object methods and prototypes without threatening existing code.
 
 ```typescript
 import { shimmer } from 'plugsy';
@@ -61,8 +58,12 @@ class MyObject {
 }
 
 shimmer(myObject.prototype, {
-  myMethod(myObjectInstance: MyObject, myMethod: Function, ...args: any[]) {
-    let res = myMethod(...args); // invoke original method
+  myMethod: (
+    myObjectInstance: MyObject,   // object instance
+    myMethod: Function,           // original, bound method
+    ...args: any[]                // any args passed to original fn
+  ) => {
+    let res = myMethod(...args);  // invoke original
     // do stuff!
   }
 });
@@ -118,7 +119,6 @@ const tags = await tagger(`
  *   }
  * }
  */
-
 ```
 
 ### Loader
