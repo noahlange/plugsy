@@ -11,8 +11,33 @@
 Plugsy is a single-dependency (gotta parse that XML somehow) plugin framework and utility belt for RPGMaker MV. It automates and simplifies many common patterns in MV plugin development —
 notetags, method shimming, plugin commands, serialization and data loading.
 
-## Overview
+## Features
+
+### Plugin commands
+
 ```typescript
+import Plugsy, { command, persist } from 'plugsy';
+
+class MyPlugin extends Plugsy {
+
+  // command can be used to decorate methods as valid plugin commands.
+  // invoke as `myplugin hello`
+  @command
+  public hello(hello: string) {
+    return $dataMyPlugin[hello];
+  }
+
+  public goodbye = command((goodbye: string) => {
+    console.info(goodbye);
+  });
+}
+
+$plugsy.install(MyPlugin);
+```
+
+### Persistance
+```typescript
+
 import Plugsy, { command, persist } from 'plugsy';
 
 class MyPlugin extends Plugsy {
@@ -20,20 +45,11 @@ class MyPlugin extends Plugsy {
   @persist
   public myVariable = 42;
 
-  // command can be used to decorate methods as valid plugin commands.
-  @command
-  public hello(hello: string) {
-    return $dataMyPlugin[hello];
-  }
-
   // commands and persisted variables can also be used in environments without decorators
   public myOtherVariable = persist('YOU ARE TEARING ME APART LISA');
-  public goodbye = command((goodbye: string) => {
-    console.info(goodbye);
-  });
 }
 
-$plugsy.install(new MyPlugin());
+$plugsy.install(MyPlugin);
 ```
 
 On save and load, any changes to persisted variables will be
@@ -57,7 +73,7 @@ class MyObject {
   }
 }
 
-shimmer(myObject.prototype, {
+const handle = shimmer(myObject.prototype, {
   myMethod: (
     myObjectInstance: MyObject,   // object instance
     myMethod: Function,           // original, bound method
@@ -67,6 +83,8 @@ shimmer(myObject.prototype, {
     // do stuff!
   }
 });
+
+shimmer(myObject.prototype, handle); // revert shimmed methods
 ```
 
 ### Tagger

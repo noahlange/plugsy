@@ -1,7 +1,7 @@
 import { Serializable } from '../decorators/persist';
 import { persisted, toPersist } from '../utils/constants';
 
-abstract class Plugsy {
+export default class Plugsy {
   // do *not* initialize or it'll overwrite the array of decorated persists
   public [toPersist]: string[];
   // hash of persisted values
@@ -9,9 +9,12 @@ abstract class Plugsy {
   public data?: string[] = [];
   public parameters?: any;
 
-  public init() {
-    const keys = this[toPersist] || [];
+  public uninstall(): Promise<void> | void {
+    return;
+  }
 
+  public install(): Promise<void> | void {
+    const keys = this[toPersist] || [];
     for (const key in this) {
       if (key in this) {
         const value = this[key];
@@ -22,7 +25,6 @@ abstract class Plugsy {
         }
       }
     }
-
     for (const key of keys) {
       const value = this[key];
       this[persisted][key] = value[persisted] ? value[persisted] : value;
@@ -34,5 +36,3 @@ abstract class Plugsy {
     this[toPersist] = keys;
   }
 }
-
-export default Plugsy;

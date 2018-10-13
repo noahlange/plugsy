@@ -2,11 +2,12 @@ import test from 'ava';
 import Plugsy, { persist } from '..';
 
 import hydrate from '../utils/hydrate';
-import serialize from '../utils/serialize';
+import serialize from '../utils/persist';
 
 class MyPlugin extends Plugsy {
   public myString = persist('foobar');
-  @persist public myVariable = 42;
+  @persist
+  public myVariable = 42;
   @persist
   public myOtherVariable = {
     OH_HI: ['MARK', 'LISA']
@@ -15,7 +16,7 @@ class MyPlugin extends Plugsy {
 
 test('should predictably serialize objects', t => {
   const obj1 = new MyPlugin();
-  obj1.init();
+  obj1.install();
   obj1.myString = 'barfaz';
   t.deepEqual(serialize(obj1), {
     myOtherVariable: {
@@ -29,8 +30,8 @@ test('should predictably serialize objects', t => {
 test('should predictably hydrate objects', t => {
   const obj1 = new MyPlugin();
   const obj2 = new MyPlugin();
-  obj1.init();
-  obj2.init();
+  obj1.install();
+  obj2.install();
   const serialized = serialize(obj1);
   hydrate(obj2, serialized);
   t.deepEqual(obj1, obj2);

@@ -2,19 +2,25 @@ import Plugsy from '..';
 
 import { hasWindow, isCommand } from '../utils/constants';
 import hydrate from '../utils/hydrate';
-import persist from '../utils/serialize';
+import persist from '../utils/persist';
 import shim from '../utils/shimmer';
 import parse from '../utils/tagger';
 
 const hasCorescript: boolean = hasWindow && (window as any).corescript;
 const corescript = hasCorescript ? (window as any).corescript : null;
 
+interface PlugsyConstructor<T extends Plugsy> {
+  new (...args: any[]): T;
+}
+
 export default class PlugsyManager {
   public commands: string[] = [];
-
+  // typeof Plugsy
+  public ctors: Record<string, any> = {};
   // hash of name => plugin instance
   public plugins: Record<string, Plugsy> = {};
-  public toInstall: Plugsy[] = [];
+  // hash of name => shim handle
+  public handles: Record<string, number> = {};
 
   // hash of id => notetags => props
   public notetags: Record<string, Array<Record<string, any>>> = {};
@@ -25,16 +31,31 @@ export default class PlugsyManager {
   // hash of name => serialized contents
   public store: Record<string, any> = {};
 
-  // overwrite save and load functionality.
   public constructor() {
+    this.shim();
+  }
+
+  // overwrite save and load functionality.
+  public shim() {
     const Data = hasCorescript ? corescript.Managers.DataManager : DataManager;
 
     shim(Data, {
       // on game load...
-      extractSaveContents: (dm, extractSave, contents) => {
+      extractSaveContents: async (dm, extractSave, contents) => {
+        await this._uninstallPlugins();
+        this.store = {};
+        this._load(contents.plugsy);
         extractSave(contents);
-        this.load(contents.plugsy);
+        await this._installPlugins();
       },
+      setupNewGame: async (dm, setup) => {
+        this.store = {};
+        await this._uninstallPlugins();
+        this._load({});
+        setup();
+        await this._installPlugins();
+      },
+
       // load notetags
       isDatabaseLoaded: async (dm, isLoaded) => {
         const okay = isLoaded();
@@ -45,7 +66,6 @@ export default class PlugsyManager {
             [curr.id]: await parse(curr.note)
           };
         };
-
         this.notetags = await (hasCorescript
           ? Object.keys(corescript.$)
               .filter(f => Array.isArray(corescript.$[f]))
@@ -70,12 +90,6 @@ export default class PlugsyManager {
                     .reduce(reduce, {})
                 };
               }, {}));
-
-        for (const plugin of this.toInstall) {
-          this._install(plugin);
-        }
-        // callback being invoked repeatedly, plugins were being installed multiple times.
-        this.toInstall = [];
         return okay;
       },
       loadDatabase: (dm, load) => {
@@ -84,15 +98,23 @@ export default class PlugsyManager {
       },
       makeSaveContents: (dm, makeSave) => {
         const contents = makeSave();
-        contents.plugsy = this.save();
+        contents.plugsy = this._save();
         return contents;
       }
     });
   }
 
+  // install a plugin by constructor and register commands.
+  /// can be chained -- $plugsy.install(Foo).install(Bar);
+  public install<T extends Plugsy>(plugin: PlugsyConstructor<T>): this {
+    this.ctors[plugin.name] = plugin;
+    return this;
+  }
+
+
   // returns the plugin's own properties for serialization.
   // this is not a great solution, but it'll work for now.
-  public save(): object {
+  protected _save(): object {
     const out = {};
     for (const name in this.plugins) {
       if (this.plugins[name]) {
@@ -104,7 +126,7 @@ export default class PlugsyManager {
   }
 
   // load data from the save file into the data store.
-  public load(contents: object): void {
+  protected _load(contents: object): void {
     for (const name in contents) {
       if (contents[name]) {
         this.store[name] = contents[name];
@@ -112,32 +134,45 @@ export default class PlugsyManager {
     }
   }
 
+  protected async _uninstallPlugins() {
+    for (const key of Object.keys(this.plugins)) {
+      this.commands = this.commands.filter(command => !command.startsWith(key));
+      await this._uninstall(key);
+    }
+  }
+
   // hydrate a plugin with its serialized contents
-  public hydrate(plugin: Plugsy): void {
-    hydrate(plugin, this.store[plugin.constructor.name] || {});
+  protected _hydrate(name: string, plugin: Plugsy): void {
+    hydrate(plugin, this.store[name] || {});
   }
 
-  // retrieve a plugin by name or constructor
-  public get<T extends Plugsy>(name: string | typeof Plugsy): T {
-    const normalized = typeof name === 'function' ? name.name : name;
-    return this.plugins[normalized] as T;
+  protected async _installPlugins() {
+    for (const key of Object.keys(this.ctors)) {
+      if (!this.plugins[key]) {
+        const Ctor = this.ctors[key];
+        const plugin = new Ctor();
+        this.data.push(...plugin.data);
+        await this._install(plugin);
+        this.plugins[key] = plugin;
+      }
+    }
   }
 
-  // install a plugin by constructor and register commands.
-  /// can be chained -- $plugsy.install(new Foo).install(new Bar);
-  public install<T extends Plugsy>(plugin: T): this {
-    this.toInstall.push(plugin);
-    this.data.push(...plugin.data);
-    return this;
-  }
-
-  protected _install(plugin: Plugsy) {
-    plugin.init();
+  protected async _uninstall(name: string) {
+    const plugin = this.plugins[name];
+    await plugin.uninstall();
+    const id = this.handles[name];
     const Interpreter = hasCorescript
       ? corescript.Game.Game_Interpreter
       : Game_Interpreter;
+    shim(Interpreter, id);
+    delete this.plugins[name];
+  }
+
+  protected async _install(plugin: Plugsy) {
     const name = plugin.constructor.name;
-    this.hydrate(plugin);
+    this._hydrate(name, plugin);
+    await plugin.install();
     plugin.parameters = PluginManager.parameters(name);
     this.plugins[name] = plugin;
 
@@ -149,9 +184,13 @@ export default class PlugsyManager {
       }
     }
 
-    shim(Interpreter.prototype, {
+    const Interpreter = hasCorescript
+      ? corescript.Game.Game_Interpreter
+      : Game_Interpreter;
+
+    const handle = shim(Interpreter.prototype, {
       pluginCommand(
-        interpreter,
+        int,
         fn: (...args: any[]) => any,
         command: string,
         args: string[]
@@ -166,5 +205,7 @@ export default class PlugsyManager {
         }
       }
     });
+
+    this.handles[name] = handle;
   }
 }
