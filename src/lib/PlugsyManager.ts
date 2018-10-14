@@ -43,13 +43,11 @@ export default class PlugsyManager {
       // on game load...
       extractSaveContents: async (dm, extractSave, contents) => {
         await this._uninstallPlugins();
-        this.store = {};
         this._load(contents.plugsy);
         extractSave(contents);
         await this._installPlugins();
       },
       setupNewGame: async (dm, setup) => {
-        this.store = {};
         await this._uninstallPlugins();
         this._load({});
         setup();
@@ -139,6 +137,8 @@ export default class PlugsyManager {
       this.commands = this.commands.filter(command => !command.startsWith(key));
       await this._uninstall(key);
     }
+    this.commands = [];
+    this.store = {};
   }
 
   // hydrate a plugin with its serialized contents
@@ -176,6 +176,10 @@ export default class PlugsyManager {
     plugin.parameters = PluginManager.parameters(name);
     this.plugins[name] = plugin;
 
+    const Interpreter = hasCorescript
+      ? corescript.Game.Game_Interpreter
+      : Game_Interpreter;
+
     for (const key of Object.getOwnPropertyNames(
       Object.getPrototypeOf(plugin)
     )) {
@@ -183,10 +187,6 @@ export default class PlugsyManager {
         this.commands.push(`${name.toLowerCase()} ${key.toLowerCase()}`);
       }
     }
-
-    const Interpreter = hasCorescript
-      ? corescript.Game.Game_Interpreter
-      : Game_Interpreter;
 
     const handle = shim(Interpreter.prototype, {
       pluginCommand(
