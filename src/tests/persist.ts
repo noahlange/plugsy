@@ -14,6 +14,17 @@ class MyPlugin extends Plugsy {
   };
 }
 
+test('should refuse to serialize untrackable values', t => {
+  // tslint:disable-next-line
+  class OtherPlugin extends Plugsy {
+    @persist public value = null;
+  }
+  t.throws(() => {
+    const foo = new OtherPlugin;
+    foo.install();
+  });
+})
+
 test('should predictably serialize objects', t => {
   const obj1 = new MyPlugin();
   obj1.install();

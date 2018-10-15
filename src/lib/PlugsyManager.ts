@@ -1,43 +1,95 @@
+import parse from 'minimist-string';
 import Plugsy from '..';
 
+import { snakecase } from '../utils/casings';
 import { hasWindow, isCommand } from '../utils/constants';
 import hydrate from '../utils/hydrate';
+import getInstanceMethodNames from '../utils/methods';
 import persist from '../utils/persist';
 import shim from '../utils/shimmer';
-import parse from '../utils/tagger';
+import tag from '../utils/tagger';
 
 const hasCorescript: boolean = hasWindow && (window as any).corescript;
 const corescript = hasCorescript ? (window as any).corescript : null;
 
-interface PlugsyConstructor<T extends Plugsy> {
+export interface PlugsyConstructor<T extends Plugsy> {
   new (...args: any[]): T;
 }
 
 export default class PlugsyManager {
-  public commands: string[] = [];
-  // typeof Plugsy
+  /**
+   * Array of registered plugin constructors.
+   */
   public ctors: Record<string, any> = {};
-  // hash of name => plugin instance
+
+  /**
+   * Hash of name => plugin instance
+   */
   public plugins: Record<string, Plugsy> = {};
-  // hash of name => shim handle
-  public handles: Record<string, number> = {};
 
-  // hash of id => notetags => props
+  /*
+   * hash of id => notetags => props
+   */
   public notetags: Record<string, Array<Record<string, any>>> = {};
-
-  // additional data files to load.
-  public data = [];
 
   // hash of name => serialized contents
   public store: Record<string, any> = {};
+
+  protected _commands: Record<
+    string,
+    Record<string, (...args: any[]) => any>
+  > = {};
 
   public constructor() {
     this.shim();
   }
 
-  // overwrite save and load functionality.
+  /**
+   * An alphabetically-sorted list of all registered plugin commands.
+   */
+  public get commands(): string[] {
+    return Object.keys(this._commands)
+      .reduce(
+        (a, b) =>
+          a.concat(Object.keys(this._commands[b]).map(c => `${b} ${c}`)),
+        []
+      )
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  /**
+   * Overload save/load/plugin command functionality.
+   */
   public shim() {
     const Data = hasCorescript ? corescript.Managers.DataManager : DataManager;
+    const Interpreter = hasCorescript
+      ? corescript.Game.Game_Interpreter
+      : Game_Interpreter;
+
+    shim(Interpreter.prototype, {
+      pluginCommand: (
+        _interpreter,
+        pluginCommand: (...args: any[]) => any,
+        command: string,
+        ...originalArgs: string[]
+      ) => {
+        pluginCommand(command, originalArgs);
+        const {
+          _: [subcommand, ...args]
+        } = parse(originalArgs.join(' '));
+        let res = null;
+        for (const fullCommand of this.commands) {
+          // i.e., starts with plugin name
+          if (fullCommand.startsWith(command + ' ' + subcommand)) {
+            const fns = this._commands[command];
+            if (fns && fns[subcommand]) {
+              res = fns[subcommand](...args);
+            }
+          }
+        }
+        return res;
+      }
+    });
 
     shim(Data, {
       // on game load...
@@ -61,7 +113,7 @@ export default class PlugsyManager {
           const prev = await p;
           return {
             ...prev,
-            [curr.id]: await parse(curr.note)
+            [curr.id]: await tag(curr.note)
           };
         };
         this.notetags = await (hasCorescript
@@ -90,10 +142,6 @@ export default class PlugsyManager {
               }, {}));
         return okay;
       },
-      loadDatabase: (dm, load) => {
-        dm._databaseFiles.push(...this.data);
-        load();
-      },
       makeSaveContents: (dm, makeSave) => {
         const contents = makeSave();
         contents.plugsy = this._save();
@@ -102,13 +150,14 @@ export default class PlugsyManager {
     });
   }
 
-  // install a plugin by constructor and register commands.
-  /// can be chained -- $plugsy.install(Foo).install(Bar);
+  /**
+   * Register a plugin constructor for installation. Can be chained,
+   * e.g., $plugsy.install(Foo).install(Bar);
+   */
   public install<T extends Plugsy>(plugin: PlugsyConstructor<T>): this {
     this.ctors[plugin.name] = plugin;
     return this;
   }
-
 
   // returns the plugin's own properties for serialization.
   // this is not a great solution, but it'll work for now.
@@ -134,10 +183,9 @@ export default class PlugsyManager {
 
   protected async _uninstallPlugins() {
     for (const key of Object.keys(this.plugins)) {
-      this.commands = this.commands.filter(command => !command.startsWith(key));
       await this._uninstall(key);
     }
-    this.commands = [];
+    this._commands = {};
     this.store = {};
   }
 
@@ -151,7 +199,6 @@ export default class PlugsyManager {
       if (!this.plugins[key]) {
         const Ctor = this.ctors[key];
         const plugin = new Ctor();
-        this.data.push(...plugin.data);
         await this._install(plugin);
         this.plugins[key] = plugin;
       }
@@ -161,11 +208,6 @@ export default class PlugsyManager {
   protected async _uninstall(name: string) {
     const plugin = this.plugins[name];
     await plugin.uninstall();
-    const id = this.handles[name];
-    const Interpreter = hasCorescript
-      ? corescript.Game.Game_Interpreter
-      : Game_Interpreter;
-    shim(Interpreter, id);
     delete this.plugins[name];
   }
 
@@ -173,39 +215,13 @@ export default class PlugsyManager {
     const name = plugin.constructor.name;
     this._hydrate(name, plugin);
     await plugin.install();
-    plugin.parameters = PluginManager.parameters(name);
     this.plugins[name] = plugin;
-
-    const Interpreter = hasCorescript
-      ? corescript.Game.Game_Interpreter
-      : Game_Interpreter;
-
-    for (const key of Object.getOwnPropertyNames(
-      Object.getPrototypeOf(plugin)
-    )) {
-      if (plugin[key][isCommand]) {
-        this.commands.push(`${name.toLowerCase()} ${key.toLowerCase()}`);
+    const commands = (this._commands[snakecase(name)] = {});
+    for (const key of getInstanceMethodNames(plugin, Plugsy)) {
+      const fn = plugin[key];
+      if (fn[isCommand] && typeof fn === 'function') {
+        commands[snakecase(key)] = fn.bind(plugin);
       }
     }
-
-    const handle = shim(Interpreter.prototype, {
-      pluginCommand(
-        int,
-        fn: (...args: any[]) => any,
-        command: string,
-        args: string[]
-      ) {
-        fn(command, args);
-        const subcommand = args[0];
-        if (command.toLowerCase() === name.toLowerCase()) {
-          const cmd = plugin[subcommand];
-          if (cmd && cmd[isCommand]) {
-            cmd.apply(plugin, args.slice(1));
-          }
-        }
-      }
-    });
-
-    this.handles[name] = handle;
   }
 }

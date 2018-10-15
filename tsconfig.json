@@ -8,6 +8,7 @@
     "experimentalDecorators": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "emitDecoratorMetadata": true,
     "moduleResolution": "node",
     "declaration": true,
     "declarationDir": "types"

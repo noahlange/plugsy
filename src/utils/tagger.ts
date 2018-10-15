@@ -1,12 +1,5 @@
 import { Parser } from 'tsxml';
-
-// https://stackoverflow.com/a/15829686
-function camelcase(str: string) {
-  return str.replace(
-    /^([A-Z])|[\s-_]+(\w)/g,
-    (_, p1, p2) => (p2 ? p2.toUpperCase() : p1.toLowerCase())
-  );
-}
+import { camelcase } from './casings';
 
 type ASTNode = any;
 interface ReturnNode {

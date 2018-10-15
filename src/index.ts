@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { hasWindow } from './utils/constants';
 
 import command from './decorators/command';
@@ -8,6 +10,7 @@ import PlugsyManager from './lib/PlugsyManager';
 import loader from './utils/loader';
 import shimmer from './utils/shimmer';
 import tagger from './utils/tagger';
+
 declare global {
   interface Window {
     $plugsy: PlugsyManager;

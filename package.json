@@ -7,12 +7,15 @@
   "main": "./plugsy.js",
   "types": "./types/index.d.ts",
   "dependencies": {
-    "terser-webpack-plugin": "^1.1.0",
+    "minimist-string": "^1.0.2",
+    "reflect-metadata": "^0.1.12",
     "tsxml": "^0.1.0"
   },
   "devDependencies": {
     "ava": "^0.25.0",
+    "nyc": "^13.1.0",
     "prettier": "^1.13.7",
+    "terser-webpack-plugin": "^1.1.0",
     "ts-loader": "^4.4.2",
     "tslint": "^5.10.0",
     "tslint-config-prettier": "^1.13.0",
@@ -20,9 +23,15 @@
     "webpack": "^4.20.2",
     "webpack-cli": "^3.1.2"
   },
+  "nyc": {
+    "reporter": [
+      "html",
+      "lcov"
+    ]
+  },
   "scripts": {
     "lint": "tslint src/**/*.ts",
-    "test": "tsc --module \"commonjs\"; ava -v ./dist/tests/**/*.js",
+    "test": "tsc --module \"commonjs\"; nyc ava -v ./dist/tests/**/*.js",
     "pretty": "prettier --write src/**/*.ts",
     "watch": "webpack --watch",
     "build": "webpack --mode none"

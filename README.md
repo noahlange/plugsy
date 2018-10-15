@@ -8,7 +8,7 @@
     |_|            |___/     |___/
 
 # plugsy
-Plugsy is a single-dependency (gotta parse that XML somehow) plugin framework and utility belt for RPGMaker MV. It automates and simplifies many common patterns in MV plugin development —
+Plugsy is a low-dependency (gotta parse that XML somehow) plugin framework and utility belt for RPGMaker MV. It automates and simplifies many common patterns in MV plugin development —
 notetags, method shimming, plugin commands, serialization and data loading.
 
 ## Features
@@ -21,15 +21,23 @@ import Plugsy, { command, persist } from 'plugsy';
 class MyPlugin extends Plugsy {
 
   // command can be used to decorate methods as valid plugin commands.
-  // invoke as `myplugin hello`
-  @command
-  public hello(hello: string) {
-    return $dataMyPlugin[hello];
+  // invoke in plugin command as `my_plugin hello`
+  @command('Says hello!')
+  public hello(name: string) {
+    console.info(`Hello, ${name}!`);
   }
 
-  public goodbye = command((goodbye: string) => {
-    console.info(goodbye);
-  });
+  // description is not strictly required
+  @command
+  public message(message: string) {
+    console.info(message);
+  }
+
+  // commands can also wrap arrow/anonymous functions for environments
+  // without decorators
+  public goodbye = command((name: string) => {
+    console.info(`Goodbye, ${name}`);
+  }, 'Says goodbye!');
 }
 
 $plugsy.install(MyPlugin);
@@ -41,11 +49,13 @@ $plugsy.install(MyPlugin);
 import Plugsy, { command, persist } from 'plugsy';
 
 class MyPlugin extends Plugsy {
-  // serializable `persist`ed properties are automatically saved to and loaded from save files
+  // serializable `persist`ed properties are automatically saved to and loaded
+  // from save files
   @persist
   public myVariable = 42;
 
-  // commands and persisted variables can also be used in environments without decorators
+  // commands and persisted variables can also be used in environments 
+  // without decorators
   public myOtherVariable = persist('YOU ARE TEARING ME APART LISA');
 }
 
