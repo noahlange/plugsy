@@ -8,8 +8,10 @@
     |_|            |___/     |___/
 
 # plugsy
-Plugsy is a low-dependency (gotta parse that XML somehow) plugin framework and utility belt for RPGMaker MV. It automates and simplifies many common patterns in MV plugin development —
-notetags, method shimming, plugin commands, serialization and data loading.
+Plugsy is a plugin framework and utility belt for RPGMaker MV. It automates and
+simplifies many common patterns in MV plugin development — notetags, method
+shimming, plugin commands, variable serialization, data loading and event
+handling.
 
 ## Features
 
@@ -19,7 +21,6 @@ notetags, method shimming, plugin commands, serialization and data loading.
 import Plugsy, { command, persist } from 'plugsy';
 
 class MyPlugin extends Plugsy {
-
   // command can be used to decorate methods as valid plugin commands.
   // invoke in plugin command as `my_plugin hello`
   @command('Says hello!')
@@ -44,8 +45,8 @@ $plugsy.install(MyPlugin);
 ```
 
 ### Persistance
-```typescript
 
+```typescript
 import Plugsy, { command, persist } from 'plugsy';
 
 class MyPlugin extends Plugsy {
@@ -54,7 +55,7 @@ class MyPlugin extends Plugsy {
   @persist
   public myVariable = 42;
 
-  // commands and persisted variables can also be used in environments 
+  // commands and persisted variables can also be used in environments
   // without decorators
   public myOtherVariable = persist('YOU ARE TEARING ME APART LISA');
 }
@@ -70,7 +71,7 @@ Adding new plugin commands is as easy as adding methods with the `command`
 decorator.
 
 ### Shimmer
-Shimmer is a simple utility function. It allows you to easily augment existing
+`shimmer` is a simple utility function. It allows you to easily augment existing
 functionality by providing an object of methods that will be
 merged onto the first argument. This allows you to safely "overwrite" object methods and prototypes without threatening existing code.
 
@@ -85,11 +86,11 @@ class MyObject {
 
 const handle = shimmer(myObject.prototype, {
   myMethod: (
-    myObjectInstance: MyObject,   // object instance
-    myMethod: Function,           // original, bound method
-    ...args: any[]                // any args passed to original fn
+    myObjectInstance: MyObject, // object instance
+    myMethod: Function, // original, bound method
+    ...args: any[] // any args passed to original fn
   ) => {
-    let res = myMethod(...args);  // invoke original
+    let res = myMethod(...args); // invoke original
     // do stuff!
   }
 });
@@ -150,6 +151,7 @@ const tags = await tagger(`
 ```
 
 ### Loader
+
 Files in the 'data' directory can be loaded via Promise using the `loader`
 export.
 
@@ -162,7 +164,24 @@ import { loader } from 'plugsy';
 })();
 ```
 
+### Event bus
+
+The global Plugsy manager, `$plugsy`, also functions as a rudimentary event bus, allowing
+you to dispatch and respond to events within your plugins.
+
+```typescript
+import Plugsy, { on } from 'plugsy';
+
+class MyPlugin extends Plugsy {
+  @on('console')
+  public log(message: string) {
+    console.log(message);
+  }
+}
+```
+
 ## Installation
+
 You'll need node.js and npm installed in order to build the plugin.
 
 ```

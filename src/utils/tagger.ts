@@ -67,11 +67,13 @@ export default async function tagger(note: string): Promise<object | null> {
     .join('\n');
 
   const ast = await Parser.parseStringToAst(filtered);
-  return ast.childNodes
-    // clean-up
-    .map(child => parseAst(child))
-    // no loose text
-    .filter(t => typeof t !== 'string')
-    // concat top-level tags
-    .reduce((a, b) => ({ ...a, ...b }), {});
+  return (
+    ast.childNodes
+      // clean-up
+      .map(child => parseAst(child))
+      // no loose text
+      .filter(t => typeof t !== 'string')
+      // concat top-level tags
+      .reduce((a, b) => ({ ...a, ...b }), {})
+  );
 }

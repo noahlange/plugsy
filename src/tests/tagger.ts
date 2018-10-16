@@ -119,6 +119,6 @@ test("shouldn't explode when given mix of Yanfly tags and XML tags", async t => 
   `;
   t.deepEqual(await p(str), {
     Bar: { foo: 'bat' },
-    bag: { ban: true, contents: 'oh hi mark' },
+    bag: { ban: true, contents: 'oh hi mark' }
   });
 });

@@ -2,12 +2,13 @@ import parse from 'minimist-string';
 import Plugsy from '..';
 
 import { snakecase } from '../utils/casings';
-import { hasWindow, isCommand } from '../utils/constants';
+import { hasWindow, isCommand, isHandler } from '../utils/constants';
 import hydrate from '../utils/hydrate';
 import getInstanceMethodNames from '../utils/methods';
 import persist from '../utils/persist';
 import shim from '../utils/shimmer';
 import tag from '../utils/tagger';
+import EventBus from './EventBus';
 
 const hasCorescript: boolean = hasWindow && (window as any).corescript;
 const corescript = hasCorescript ? (window as any).corescript : null;
@@ -16,7 +17,7 @@ export interface PlugsyConstructor<T extends Plugsy> {
   new (...args: any[]): T;
 }
 
-export default class PlugsyManager {
+export default class PlugsyManager extends EventBus {
   /**
    * Array of registered plugin constructors.
    */
@@ -41,6 +42,7 @@ export default class PlugsyManager {
   > = {};
 
   public constructor() {
+    super();
     this.shim();
   }
 
@@ -186,7 +188,9 @@ export default class PlugsyManager {
       await this._uninstall(key);
     }
     this._commands = {};
+    this._events = {};
     this.store = {};
+    this.plugins = {};
   }
 
   // hydrate a plugin with its serialized contents
@@ -208,7 +212,6 @@ export default class PlugsyManager {
   protected async _uninstall(name: string) {
     const plugin = this.plugins[name];
     await plugin.uninstall();
-    delete this.plugins[name];
   }
 
   protected async _install(plugin: Plugsy) {
@@ -221,6 +224,9 @@ export default class PlugsyManager {
       const fn = plugin[key];
       if (fn[isCommand] && typeof fn === 'function') {
         commands[snakecase(key)] = fn.bind(plugin);
+      }
+      if (fn[isHandler] && typeof fn === 'function') {
+        this.on(fn[isHandler], fn.bind(plugin));
       }
     }
   }

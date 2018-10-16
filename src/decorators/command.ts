@@ -1,11 +1,13 @@
 import Plugsy from '..';
 import { description as desc, isCommand } from '../utils/constants';
 
-export interface PropertyOrMethodDecorator extends MethodDecorator, PropertyDecorator {
+export interface PropertyOrMethodDecorator
+  extends MethodDecorator,
+    PropertyDecorator {
   (target: object, propertyKey: string): void;
 }
 
-type Handler = (...args: any[]) => any;
+export type Handler = (...args: any[]) => any;
 
 function brand(object: any, description: string) {
   Object.defineProperty(object, isCommand, { value: true });

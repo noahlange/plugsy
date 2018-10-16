@@ -9,13 +9,13 @@ test('should properly shim and unshim functions', t => {
   };
   const shims = {
     bar: (_, fn, one, two) => {
-      return fn(one, two) + two + one
+      return fn(one, two) + two + one;
     }
   };
 
   const shims2 = {
     bar: (_, fn, one, two) => {
-      return fn(one, two) * one * two
+      return fn(one, two) * one * two;
     }
   };
 

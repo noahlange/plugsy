@@ -2,7 +2,7 @@
 export function snakecase(str) {
   return str
     .replace(/(^[A-Z])/, ([first]) => first.toLowerCase())
-    .replace(/([A-Z])/g, ([letter]) => `_${letter.toLowerCase()}`)
+    .replace(/([A-Z])/g, ([letter]) => `_${letter.toLowerCase()}`);
 }
 
 // https://stackoverflow.com/a/15829686
