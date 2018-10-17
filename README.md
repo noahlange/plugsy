@@ -178,6 +178,8 @@ class MyPlugin extends Plugsy {
     console.log(message);
   }
 }
+
+$plugsy.dispatch('console', 'Hello, world!'); // logs "Hello, world!"
 ```
 
 ## Installation

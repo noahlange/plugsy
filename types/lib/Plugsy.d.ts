@@ -9,7 +9,7 @@ export default class Plugsy {
      */
     uninstall(): Promise<void> | void;
     /**
-     * Adds persistence to declared variables..
+     * Adds persistence to declared variables.
      */
     install(): Promise<void> | void;
 }

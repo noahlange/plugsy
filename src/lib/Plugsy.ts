@@ -44,32 +44,23 @@ export default class Plugsy {
   }
 
   /**
-   * Adds persistence to declared variables..
+   * Adds persistence to declared variables.
    */
   public install(): Promise<void> | void {
     const keys = this[toPersist] || [];
     for (const key in this) {
-      if (key in this) {
-        const value = this[key];
-        if (value && value[toPersist]) {
+      if (keys.indexOf(key) === -1 && key !== toPersist) {
+        const value = this[key] as any;
+        if (value !== null && value[toPersist]) {
           if (keys.indexOf(key) === -1) {
             keys.push(key);
           }
+          this[persisted][key] = value[persisted] ? value[persisted] : value;
+          Object.defineProperty(this, key, {
+            get: () => this[persisted][key],
+            set: v => (this[persisted][key] = v)
+          });
         }
-      }
-    }
-    for (const key of keys) {
-      const value = this[key];
-      if ((value && !isBooleanOrNull(value)) || value === '') {
-        this[persisted][key] = value[persisted] ? value[persisted] : value;
-        Object.defineProperty(this, key, {
-          get: () => this[persisted][key],
-          set: v => (this[persisted][key] = v)
-        });
-      } else {
-        throw new Error(
-          "Persisted values must be objects, string literals or numeric literals. If you'd like to initialize a non-value, use an empty string."
-        );
       }
     }
     this[toPersist] = keys;

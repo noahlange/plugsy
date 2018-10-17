@@ -2,7 +2,7 @@ import parse from 'minimist-string';
 import Plugsy from '..';
 
 import { snakecase } from '../utils/casings';
-import { hasWindow, isCommand, isHandler } from '../utils/constants';
+import { handlerFor, hasWindow, isCommand } from '../utils/constants';
 import hydrate from '../utils/hydrate';
 import getInstanceMethodNames from '../utils/methods';
 import persist from '../utils/persist';
@@ -101,6 +101,12 @@ export default class PlugsyManager extends EventBus {
         extractSave(contents);
         await this._installPlugins();
       },
+      makeSaveContents: (dm, makeSave) => {
+        const contents = makeSave();
+        contents.plugsy = this._save();
+        return contents;
+      },
+      // on new game
       setupNewGame: async (dm, setup) => {
         await this._uninstallPlugins();
         this._load({});
@@ -143,11 +149,6 @@ export default class PlugsyManager extends EventBus {
                 };
               }, {}));
         return okay;
-      },
-      makeSaveContents: (dm, makeSave) => {
-        const contents = makeSave();
-        contents.plugsy = this._save();
-        return contents;
       }
     });
   }
@@ -225,8 +226,8 @@ export default class PlugsyManager extends EventBus {
       if (fn[isCommand] && typeof fn === 'function') {
         commands[snakecase(key)] = fn.bind(plugin);
       }
-      if (fn[isHandler] && typeof fn === 'function') {
-        this.on(fn[isHandler], fn.bind(plugin));
+      if (fn[handlerFor] && typeof fn === 'function') {
+        this.on(fn[handlerFor], fn.bind(plugin));
       }
     }
   }

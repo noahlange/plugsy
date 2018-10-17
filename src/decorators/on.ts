@@ -1,9 +1,9 @@
 import Plugsy from '../lib/Plugsy';
-import { isHandler } from '../utils/constants';
+import { handlerFor } from '../utils/constants';
 import { Handler } from './command';
 
 function brand(object: any, event: string) {
-  Object.defineProperty(object, isHandler, { value: event });
+  Object.defineProperty(object, handlerFor, { value: event });
   return object;
 }
 
