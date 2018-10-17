@@ -23,7 +23,7 @@ export default class PlugsyManager extends EventBus {
     /**
      * Overload save/load/plugin command functionality.
      */
-    shim(): void;
+    extend(): void;
     /**
      * Register a plugin constructor for installation. Can be chained,
      * e.g., $plugsy.install(Foo).install(Bar);

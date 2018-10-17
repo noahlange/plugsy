@@ -10,7 +10,7 @@ import Plugsy from './lib/Plugsy';
 import PlugsyManager from './lib/PlugsyManager';
 
 import loader from './utils/loader';
-import shimmer from './utils/shimmer';
+import redef, { dedef } from './utils/redef';
 import tagger from './utils/tagger';
 
 declare global {
@@ -32,4 +32,4 @@ if (hasWindow) {
 }
 
 export default Plugsy;
-export { PlugsyManager, command, on, persist, loader, tagger, shimmer };
+export { PlugsyManager, command, on, persist, loader, tagger, redef, dedef };

@@ -1,12 +1,3 @@
-           _
-          | |
-     _ __ | |_   _  __ _ ___ _   _
-    | '_ \| | | | |/ _` / __| | | |
-    | |_) | | |_| | (_| \__ \ |_| |
-    | .__/|_|\__,_|\__, |___/\__, |
-    | |             __/ |     __/ |
-    |_|            |___/     |___/
-
 # plugsy
 Plugsy is a plugin framework and utility belt for RPGMaker MV. It automates and
 simplifies many common patterns in MV plugin development — notetags, method
@@ -70,13 +61,13 @@ on load.
 Adding new plugin commands is as easy as adding methods with the `command`
 decorator.
 
-### Shimmer
-`shimmer` is a simple utility function. It allows you to easily augment existing
-functionality by providing an object of methods that will be
-merged onto the first argument. This allows you to safely "overwrite" object methods and prototypes without threatening existing code.
+### Redef / Dedef
+`redef` and `dedef` are simple utility functions. `redef` allows you to easily augment existing
+functionality by providing an object of methods that will be merged onto the first argument.
+This allows you to safely "overwrite" object methods and prototypes without threatening existing code. `dedef`, given a handle returned by `redef`, reverses the operation.
 
 ```typescript
-import { shimmer } from 'plugsy';
+import { redef, dedef } from 'plugsy';
 
 class MyObject {
   public myMethod(...args) {
@@ -84,7 +75,7 @@ class MyObject {
   }
 }
 
-const handle = shimmer(myObject.prototype, {
+const handle = redef(myObject.prototype, {
   myMethod: (
     myObjectInstance: MyObject, // object instance
     myMethod: Function, // original, bound method
@@ -95,7 +86,7 @@ const handle = shimmer(myObject.prototype, {
   }
 });
 
-shimmer(myObject.prototype, handle); // revert shimmed methods
+dedef(myObject.prototype, handle); // revert shimmed methods
 ```
 
 ### Tagger
@@ -186,7 +177,7 @@ $plugsy.dispatch('console', 'Hello, world!'); // logs "Hello, world!"
 
 You'll need node.js and npm installed in order to build the plugin.
 
-```
+```bash
 git clone git@github.com:noahlange/plugsy.git
 cd plugsy
 npm install

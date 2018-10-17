@@ -1,30 +1,42 @@
-import { shimmedFn } from './constants';
+import { isRedefined } from './constants';
 
-let shimHandle = 1;
+let handle = 1;
 
-function shimmer<T>(obj: T, index: number): T;
-function shimmer<T, K extends keyof T>(
-  obj: T,
+/**
+ * Reverse the redefinition of `target` with handle `n`.
+ */
+export function dedef<T>(target: T, n: number): void {
+  for (const key in target) {
+    if (target[key] && target[key][isRedefined]) {
+      delete target[key][isRedefined][n];
+    }
+  }
+}
+
+/**
+ * Redefine the methods of `target` with a hash of keys to replacement methods.
+ * Passing in the returned handle will reverse the operation.
+ */
+export default function redef<T extends object>(target: T, index: number): void;
+export default function redef<T extends object, K extends keyof T>(
+  target: T,
   methods: BoundMethodRecord<T, K>
 ): number;
-function shimmer<T, K extends keyof T>(
-  obj: T,
+export default function redef<T extends object, K extends keyof T>(
+  target: T,
   methods: BoundMethodRecord<T, K> | number
 ): number | T {
   if (typeof methods === 'number') {
-    for (const key in obj) {
-      if (obj[key] && obj[key][shimmedFn]) {
-        delete obj[key][shimmedFn][methods];
-      }
-    }
+    dedef(target, methods);
+    return;
   } else {
     for (const key in methods) {
       if (key in methods) {
-        shim(obj, key, methods[key]);
+        redefine(target, key, methods[key]);
       }
     }
+    return handle++;
   }
-  return shimHandle++;
 }
 
 type PartialRecord<T extends string | number | symbol, U> = Partial<
@@ -45,17 +57,13 @@ type Bound<O, F> = F extends (...args: infer U) => infer R
   ? (obj: O, fn: F, ...args: U) => R
   : (obj: O, fn: F, ...args: any[]) => any;
 
-export function unshim(fn, index) {
-  fn[shimmedFn].splice(index, 1);
-}
-
 const wrapFn = <T>(key: string) => {
   const wrap = (ctx: T, curr: any, prev: any) => {
     // this is the function we're handing to the user
     return (...args: any[]) => curr(ctx, prev, ...args);
   };
-  return function shimmed(...args: any[]) {
-    const all = this[key][shimmedFn];
+  return function redefined(...args: any[]) {
+    const all = this[key][isRedefined];
     const fns: Array<Bound<T, any>> = Object.keys(all).map(k =>
       all[k].bind(this)
     );
@@ -69,21 +77,21 @@ const wrapFn = <T>(key: string) => {
   };
 };
 
-export function shim<
+export function redefine<
   T,
   K extends keyof T,
   P extends T[K] & Fn<T[K]>,
   V extends Bound<T, T[K]>
 >(object: T, key: any, fn: V) {
   const original = object[key] as P;
-  let shims: Record<number, Bound<T, any>> = {};
+  let redefs: Record<number, Bound<T, any>> = {};
   // i.e., adding new method
   if (!original) {
-    shims = { 0: fn };
+    redefs = { 0: fn };
   } else {
-    const id = shimHandle;
-    shims = original[shimmedFn] ? original[shimmedFn] : { 0: original };
-    shims[id] = (obj: T, prev: Fn<T>, ...args: any[]) => {
+    const id = handle;
+    redefs = original[isRedefined] ? original[isRedefined] : { 0: original };
+    redefs[id] = (obj: T, prev: Fn<T>, ...args: any[]) => {
       return prev ? fn.call(obj, obj, prev, ...args) : fn.apply(obj, args);
     };
   }
@@ -91,9 +99,7 @@ export function shim<
   return Object.assign(object, {
     // tslint:disable-next-line
     [key]: Object.assign(wrapFn(key), {
-      [shimmedFn]: shims
+      [isRedefined]: redefs
     })
   });
 }
-
-export default shimmer;

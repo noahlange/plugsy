@@ -6,7 +6,7 @@ import { handlerFor, hasWindow, isCommand } from '../utils/constants';
 import hydrate from '../utils/hydrate';
 import getInstanceMethodNames from '../utils/methods';
 import persist from '../utils/persist';
-import shim from '../utils/shimmer';
+import redef from '../utils/redef';
 import tag from '../utils/tagger';
 import EventBus from './EventBus';
 
@@ -43,7 +43,7 @@ export default class PlugsyManager extends EventBus {
 
   public constructor() {
     super();
-    this.shim();
+    this.extend();
   }
 
   /**
@@ -62,13 +62,13 @@ export default class PlugsyManager extends EventBus {
   /**
    * Overload save/load/plugin command functionality.
    */
-  public shim() {
+  public extend() {
     const Data = hasCorescript ? corescript.Managers.DataManager : DataManager;
     const Interpreter = hasCorescript
       ? corescript.Game.Game_Interpreter
       : Game_Interpreter;
 
-    shim(Interpreter.prototype, {
+    redef(Interpreter.prototype, {
       pluginCommand: (
         _interpreter,
         pluginCommand: (...args: any[]) => any,
@@ -93,7 +93,7 @@ export default class PlugsyManager extends EventBus {
       }
     });
 
-    shim(Data, {
+    redef(Data, {
       // on game load...
       extractSaveContents: async (dm, extractSave, contents) => {
         await this._uninstallPlugins();
