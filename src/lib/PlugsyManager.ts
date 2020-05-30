@@ -1,4 +1,4 @@
-import parse from 'minimist-string';
+import parse from 'minimist';
 import Plugsy from '..';
 
 import { snakecase } from '../utils/casings';
